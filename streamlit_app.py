@@ -25,6 +25,7 @@ with r1c2:
 r2c1,r2c2 = st.columns(2)
 
 with r2c1:
+    st.write('Empty Barge Measurements')
     emptyInput = pd.DataFrame(
         {
             'eloc': ['Port Bow', 'Starboard Bow', 'Port Stern', 'Starboard Stern'],
@@ -60,6 +61,7 @@ with r2c1:
     emptyAvgM=(emptySumFt+emptySumIn/12)*0.3048/4
     st.write('Average empty freeboard (meters):',emptyAvgM)
 with r2c2:
+    st.write('Loaded Barge Measurements')
     loadedInput = pd.DataFrame(
         {
             'lloc': ['Port Bow', 'Starboard Bow', 'Port Stern', 'Starboard Stern'],
@@ -100,23 +102,70 @@ def bargeInterpolate(barge):
         case 'MLT 4000-2':
             displacementChart=pd.read_csv('MLT 4000-2.csv')
             emptyDisplacement=displacementChart.iloc[(displacementChart['Freeboard Mean (m)']-emptyAvgM).abs().argsort()[:2]]
+            tempED=pd.DataFrame(
+                {
+                'Freeboard Mean (m)':[emptyAvgM],
+                'Displacement (Mg)': [np.NaN],
+                }
+            )
             loadedDisplacement=displacementChart.iloc[(displacementChart['Freeboard Mean (m)']-loadedAvgM).abs().argsort()[:2]]
-            with r2c1: st.write(emptyDisplacement)
-            with r2c2: st.write(loadedDisplacement)
+            tempLD=pd.DataFrame(
+                {
+                'Freeboard Mean (m)':[loadedAvgM],
+                'Displacement (Mg)': [np.NaN],
+                }
+            )
+            empty=pd.concat([emptyDisplacement,tempED],ignore_index=True)
+            empty.sort_values('Freeboard Mean (m)',inplace=True)
+            loaded=pd.concat([loadedDisplacement,tempLD],ignore_index=True)
+            loaded.sort_values('Freeboard Mean (m)',inplace=True)
+            emptyInterp=empty.interpolate(method='linear')
+            loadedInterp=loaded.interpolate(method='linear')
+            with r2c1: 
+                st.write(emptyDisplacement)
+                st.write("Empty displacement (Mg):",emptyInterp)
+            with r2c2: 
+                st.write(loadedDisplacement)
+                st.write("Loaded displacement (Mg):",loadedInterp)
+            bargeDisplacement=loadedInterp-emptyInterp
+            st.write('Loaded barge material comes out to: ', bargeDisplacement)
         case 'MLT 4000-4':
             displacementChart=pd.read_csv('MLT 4000-4.csv')
             emptyDisplacement=displacementChart.iloc[(displacementChart['Freeboard Mean (m)']-emptyAvgM).abs().argsort()[:2]]
             loadedDisplacement=displacementChart.iloc[(displacementChart['Freeboard Mean (m)']-loadedAvgM).abs().argsort()[:2]]
-            with r2c1: st.write(emptyDisplacement)
-            with r2c2: st.write(loadedDisplacement)
+            #emptyInterp=np.interp(emptyAvgM,emptyDisplacement['Freeboard Mean (m)'],emptyDisplacement['Displacement (Mg)'])
+            #loadedInterp=np.interp(loadedAvgM,loadedDisplacement['Freeboard Mean (m)'],loadedDisplacement['Displacement (Mg)'])
+            with r2c1: 
+                st.write(emptyDisplacement)
+                #st.write("Empty displacement (Mg):",emptyInterp)
+            with r2c2: 
+                st.write(loadedDisplacement)
+                #st.write("Loaded displacement (Mg):",loadedInterp)
+            #bargeDisplacement=loadedInterp-emptyInterp
+            #st.write('Loaded barge material comes out to: ', bargeDisplacement)
         case 'MLT 4000-5 / MLT 4000-6':
             displacementChart=pd.read_csv('MLT 4000-5 & MLT 4000-6.csv')
             if emptyAvgM>displacementChart['Freeboard Mean (m)'].max():
-                emptyDisplacement=793
+                Lightship=pd.read_csv('Lightship.csv')
+                emptyDisplacement=Lightship['MLT 4000-5 & MLT 4000-6']
+                liteshp=True
             else:
                 emptyDisplacement=displacementChart.iloc[(displacementChart['Freeboard Mean (m)']-emptyAvgM).abs().argsort()[:2]]
+                liteshp=False
             loadedDisplacement=displacementChart.iloc[(displacementChart['Freeboard Mean (m)']-loadedAvgM).abs().argsort()[:2]]
-            with r2c1: st.write(emptyDisplacement)
-            with r2c2: st.write(loadedDisplacement)
+            #if liteshp==True:
+                #emptyInterp=793
+            #else:
+                #emptyInterp=np.interp(emptyAvgM,emptyDisplacement['Freeboard Mean (m)'],emptyDisplacement['Displacement (Mg)'])
+            #loadedInterp=np.interp(loadedAvgM,loadedDisplacement['Freeboard Mean (m)'],loadedDisplacement['Displacement (Mg)'])
+            with r2c1: 
+                st.write(emptyDisplacement)
+                #st.write("Empty displacement (Mg):",emptyInterp)
+                
+            with r2c2: 
+                st.write(loadedDisplacement)
+                #st.write("Loaded displacement (Mg):",loadedInterp)
+            #bargeDisplacement=loadedInterp-emptyInterp
+            #st.write('Loaded barge material comes out to: ', bargeDisplacement)
 
 bargeInterpolate(barge)
