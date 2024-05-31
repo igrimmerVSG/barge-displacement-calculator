@@ -58,7 +58,7 @@ with r2c1:
     )
     emptySumFt=emptyInputEdit['eft'].sum()
     emptySumIn=emptyInputEdit['ein'].sum()
-    emptyAvgM=(emptySumFt+emptySumIn/12)*0.3048/4
+    emptyAvgM=round((emptySumFt+emptySumIn/12)*0.3048/4,4)
     st.write('Average empty freeboard (meters):',emptyAvgM)
 with r2c2:
     st.write('Loaded Barge Measurements')
@@ -94,55 +94,46 @@ with r2c2:
     )
     loadedSumFt=loadedInputEdit['lft'].sum()
     loadedSumIn=loadedInputEdit['lin'].sum()
-    loadedAvgM=(loadedSumFt+loadedSumIn/12)*0.3048/4
+    loadedAvgM=round((loadedSumFt+loadedSumIn/12)*0.3048/4,4)
     st.write('Average loaded freeboard (meters):',loadedAvgM)
+
+def interpolate(avgE,avgL,):
+    return
 
 def bargeInterpolate(barge):
     match barge:
         case 'MLT 4000-2':
             displacementChart=pd.read_csv('MLT 4000-2.csv')
             emptyDisplacement=displacementChart.iloc[(displacementChart['Freeboard Mean (m)']-emptyAvgM).abs().argsort()[:2]]
-            tempED=pd.DataFrame(
-                {
-                'Freeboard Mean (m)':[emptyAvgM],
-                'Displacement (Mg)': [np.NaN],
-                }
-            )
+            emptyDisplacement.sort_values('Freeboard Mean (m)',ignore_index=True,inplace=True)
             loadedDisplacement=displacementChart.iloc[(displacementChart['Freeboard Mean (m)']-loadedAvgM).abs().argsort()[:2]]
-            tempLD=pd.DataFrame(
-                {
-                'Freeboard Mean (m)':[loadedAvgM],
-                'Displacement (Mg)': [np.NaN],
-                }
-            )
-            empty=pd.concat([emptyDisplacement,tempED],ignore_index=True)
-            empty.sort_values('Freeboard Mean (m)',inplace=True)
-            loaded=pd.concat([loadedDisplacement,tempLD],ignore_index=True)
-            loaded.sort_values('Freeboard Mean (m)',inplace=True)
-            emptyInterp=empty.interpolate(method='linear')
-            loadedInterp=loaded.interpolate(method='linear')
+            loadedDisplacement.sort_values('Freeboard Mean (m)',ignore_index=True,inplace=True)
+            empty=round((emptyDisplacement.iloc[0]['Displacement (Mg)']+(emptyAvgM-emptyDisplacement.iloc[0]['Freeboard Mean (m)'])*(emptyDisplacement.iloc[1]['Displacement (Mg)']-emptyDisplacement.iloc[0]['Displacement (Mg)'])/(emptyDisplacement.iloc[1]['Freeboard Mean (m)']-emptyDisplacement.iloc[0]['Freeboard Mean (m)'])),4)
+            loaded=round((loadedDisplacement.iloc[0]['Displacement (Mg)']+(loadedAvgM-loadedDisplacement.iloc[0]['Freeboard Mean (m)'])*(loadedDisplacement.iloc[1]['Displacement (Mg)']-loadedDisplacement.iloc[0]['Displacement (Mg)'])/(loadedDisplacement.iloc[1]['Freeboard Mean (m)']-loadedDisplacement.iloc[0]['Freeboard Mean (m)'])),4)
             with r2c1: 
                 st.write(emptyDisplacement)
-                st.write("Empty displacement (Mg):",emptyInterp)
+                st.write("Empty displacement (Mg):",empty)
             with r2c2: 
                 st.write(loadedDisplacement)
-                st.write("Loaded displacement (Mg):",loadedInterp)
-            bargeDisplacement=loadedInterp-emptyInterp
-            st.write('Loaded barge material comes out to: ', bargeDisplacement)
+                st.write("Loaded displacement (Mg):",loaded)
+            bargeDisplacement=int(loaded-empty)
+            st.write("Barge material displacement (Mg): ", bargeDisplacement)
         case 'MLT 4000-4':
             displacementChart=pd.read_csv('MLT 4000-4.csv')
             emptyDisplacement=displacementChart.iloc[(displacementChart['Freeboard Mean (m)']-emptyAvgM).abs().argsort()[:2]]
+            emptyDisplacement.sort_values('Freeboard Mean (m)',ignore_index=True,inplace=True)
             loadedDisplacement=displacementChart.iloc[(displacementChart['Freeboard Mean (m)']-loadedAvgM).abs().argsort()[:2]]
-            #emptyInterp=np.interp(emptyAvgM,emptyDisplacement['Freeboard Mean (m)'],emptyDisplacement['Displacement (Mg)'])
-            #loadedInterp=np.interp(loadedAvgM,loadedDisplacement['Freeboard Mean (m)'],loadedDisplacement['Displacement (Mg)'])
+            loadedDisplacement.sort_values('Freeboard Mean (m)',ignore_index=True,inplace=True)
+            empty=round((emptyDisplacement.iloc[0]['Displacement (Mg)']+(emptyAvgM-emptyDisplacement.iloc[0]['Freeboard Mean (m)'])*(emptyDisplacement.iloc[1]['Displacement (Mg)']-emptyDisplacement.iloc[0]['Displacement (Mg)'])/(emptyDisplacement.iloc[1]['Freeboard Mean (m)']-emptyDisplacement.iloc[0]['Freeboard Mean (m)'])),4)
+            loaded=round((loadedDisplacement.iloc[0]['Displacement (Mg)']+(loadedAvgM-loadedDisplacement.iloc[0]['Freeboard Mean (m)'])*(loadedDisplacement.iloc[1]['Displacement (Mg)']-loadedDisplacement.iloc[0]['Displacement (Mg)'])/(loadedDisplacement.iloc[1]['Freeboard Mean (m)']-loadedDisplacement.iloc[0]['Freeboard Mean (m)'])),4)
             with r2c1: 
                 st.write(emptyDisplacement)
-                #st.write("Empty displacement (Mg):",emptyInterp)
+                st.write("Empty displacement (Mg):",empty)
             with r2c2: 
                 st.write(loadedDisplacement)
-                #st.write("Loaded displacement (Mg):",loadedInterp)
-            #bargeDisplacement=loadedInterp-emptyInterp
-            #st.write('Loaded barge material comes out to: ', bargeDisplacement)
+                st.write("Loaded displacement (Mg):",loaded)
+            bargeDisplacement=int(loaded-empty)
+            st.write("Barge material displacement (Mg): ", bargeDisplacement)
         case 'MLT 4000-5 / MLT 4000-6':
             displacementChart=pd.read_csv('MLT 4000-5 & MLT 4000-6.csv')
             if emptyAvgM>displacementChart['Freeboard Mean (m)'].max():
